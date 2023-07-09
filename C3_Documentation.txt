@@ -1,0 +1,229 @@
+The included map file is the C3 folder, you will need to place it in the saves file in the .minecraft folder. Contact me if anything doesn't make sense, I wrote something wrong by mistake, if you find an issue, or for any reason really. I have already loaded program example 4 and I think you should study what it does and how it works before writing your own code.
+
+Here is an album of images of different parts of the machine and what they do: https://imgur.com/a/aoFG8RC
+
+Here is another album of some more cool stuff: https://imgur.com/a/AkN65
+
+SUPER IMPORTANT STUFF:
+
+Warning 1: Make sure the machine is fully loaded on the map before you use it. Every part must be within your render distance if it is to operate properly.
+
+Warning 2: Make sure the machine is completely off before exiting the world. If it's not completely off and you exit the world it can lead to frozen circuits, which leads to timing and computational errors.
+
+
+
+__________________________________
+Some basic info about the machine:
+__________________________________
+
+
+-Computation Cycles:
+
+The computer uses a simple computation cycle that consists of three major steps. A cycle can be thought of as 'one unit of computing', every time one cycle is gone through a step in the program is completed.
+
+1) Read step. In this step the computer flushes the value stored in the selected read address to the data bus (a bus is basically a big bundle of wires btw).
+
+2) Write step. In this step the computer sends the value which was just fluched to the data bus to whatever is going to receive the value.
+
+3) +1/Jump step. In this step the program counter will either increment by 1 or initiate a jump if the js instruct it to do so. (I'll describe what the j's are further in this text.)
+
+Note: Don't rapidly press the on/off button, it will create multiple signals in the timing loop and mess up the cycles. This can cause read/write falures and ROM# selection and incrementation errors.
+
+
+-RAM:
+
+RAM is Random Access Memory (ROM is sequential memory, the computer likes to go through it in an ordered manner while the computer can go through RAM any way it needs to very easily). All data values in the RAM are 8-bit, meaning they take the form xxxxxxxx where the x's can either be 1s or 0s. The RAM values have 6-bit addresses and are denoted by rs and ws (more on that later). You can clear individual RAM addresses by pressing the wooden buttons on the 'write' lines when the machine is not running. (You can do it when the machine is running, but I suggest you don't.)
+
+
+-Movement of Data:
+
+Data can only take the following paths in the computer:
+
+RAM --> A or B register
+
+RAM --> display 1 or 2
+
+ALU output --> RAM
+
+ALU constants --> RAM
+
+Input --> RAM
+
+The reasons this is the case is due to the way the data bus is hooked up to the main components of the machine. Any path not listed is impossible for data to be sent through. For instance, if you were to try to send 00101100 from the ALU out to display 1, then display 1 wouldn't get the message and would just display 00 after the write step. Another example is that a RAM value can't be sent to another RAM address directly from RAM, it has to be passed through the ALU first.
+
+Important fact: When data is moved in a computer it's actually copied (unless the memory has destructive read out, but that is not the case here). Ex: Lets say that RAM3 holds the number 11110000. If you tell RAM3 to send its value to register B then the value 11110000 will be in RegB and will still be in RAM3 at the end of the cycle that moves the data. So it may actually be more useful to think of movement of data in a computer as copying rather than moving.
+
+
+-ALU (Arithmetic Logic Unit) Functions:
+
+The ALU is responsible for all the number crunching that goes on in the computer (technically the comparator is part of the ALU module, so relations are covered here too). This section gives a basic rundown of what the Boolean operations, bitshifitng, and binary addition are. This is extremely brief so I recommend looking up Boolean arithmetic, and binary addition.
+
++Bitwise Operations:
+
+The ALU uses bitwise or, and, xor, nor, etc. operations. For example, a bitwise v (or) of 01001100 and (not and as in the operation) 10000101 is expressed as and evaluates to 01001100v10000101=11001101.
+
++Addition:
+
+Binary only has two available digits to work with, 1 and 0. When two ones end up in the same place we have to carry to the next digit in the number. For example 001+001=010 (1+1=2). Another example is 01001100+10000101=11010001.
+
+Some questions for the reader: What happens when we compute 11111111+00000001? It's important to remember there are only 8 bits to work with, we can't throw a ninth bit on the number as that would require changing the computer's design. What are the implications of this result?
+
++Bitshifting:
+
+The ALU is equipped with two bitshifting functions, Left L(n) and right R(n) shift. They operate by computing L(n)=l(AvB), R(n)=r(AvB) where v is the bitwise or. Ex:
+
+l(11001101)=10011010
+
+r(11001101)=01100110
+
+
+
+_________________________
+Programming the computer:
+_________________________
+
+This section is dedicated to explaining how to write code in my language,  explaining what the parts of an instruction are, syntax, and describing what the different words in my language do. My language is an example of a machine code, and is related to assembly languages, so I suggest looking both up if you want to see generalizations.
+
++Read Only Memory:
+
+ROM for short, is what tells the computer what to do and when to do it. This is where you'll be placing redstone torches to code your programs.
+
++Basic structure:
+
+Every line of code will have the form rrrrrr|wwwwww|jjj. Each group of letters represents a different part of the instruction and the bars are just part of the notation I developed, I think they help with readability.
+
+rs represent the read address number, this number tells the computer where to grab a value from, ws are the write address number, js control jumping and shutdown.
+
++Memory addresses:
+
+These values are for the rs and ws when all the js are equal to 0. (wo means write only, ro means read only)
+
+000000 does nothing
+000001 RAM address 1
+000010 RAM address 2
+000011 R3 (ram addresses continued)
+000100 R4
+000101 R5
+000110 R6
+000111 R7
+001000 R8
+001001 R9
+001010 R10
+001011 R11
+001100 R12
+001101 R13
+001110 R14
+001111 R15
+010000 R16
+010001 Register A (wo)
+010010 Register B (wo)
+010011 Display 1 (wo) / Input 1 (ro)
+010100 Display 2 (wo) / Input 2 (ro)
+010101 AvB (ro)
+010110 A&B (ro)
+010111 A xor B (ro)
+011000 A+B (ro)
+011001 RightRoll(n) (ro)
+011010 LeftRoll(n) (ro)
+011011 not(AvB) (ro)
+011100 not(A&B) (ro)
+011101 not(A xor B) (ro)
+011110 constant 1 (ro)
+011111 constant 2 (ro)
+
++Jumping and Shutdown commands:
+
+These values are for when any j bit is a 1. When any j is a 1 (but not when they are all 1s) the rs become the ROM # to go to when a statement is false and w is the ROM address to go to when true.
+
+In this section something like <= is to be read as 'less than or equal to.' Some examples of truth evaluations would be that 6<7 is true, but 6=7 is false.
+
+jjj=000 operate on ram
+jjj=001 B>A
+jjj=010 B=A
+jjj=011 B>=A
+jjj=100 B<A
+jjj=101 B does not equal A
+jjj=110 B<=A
+jjj=111 shuts the computer down
+
+Extremely important: You cannot read and write to memory and jump on the same line or code. You cannot read or write to memory and shutdown the computer on the same line of code.
+
+The latter restriction *could* be removed with some design changes but I choose not to 'cuz I'm lazy.
+
+
+
+_________________
+Example Programs:
+_________________
+
+In these programs the number followed by a colon signifies the ROM #. This is important because two sequences of code with the same lines but difference ROM #s are not the same program due to jumping specifications.
+
+
+-Example 1: Shuts the computer down on line 4:
+
+0: 000000|000000|000  do nothing
+1: 000000|000000|000  do nothing
+2: 000000|000000|000  do nothing
+3: 000000|000000|000  do nothing
+4: 000000|000000|111  shutdown
+
+This is one of the most important programs to understand as well as the simplest to implement. The computer is only fully shut off when the ROM # and the on/off light are both down to 0. When they are both down to 0 it is safe to exit to the main menu of the game. Failing to shut down the computer properly (or not having it fully rendered while running) can lead to serious errors that are difficult to rectify.
+
+
+-Example 2: Compute input1+input2 and write the result to display1 (moving and operating on values in memory):
+
+0: 010011|000001|000  in1 to RAM1
+1: 010100|000010|000  in2 to RAM2
+2: 000001|010001|000  RAM1 to RegA
+3: 000010|010010|000  RAM2 to RegB
+4: 011000|000011|000  A+B to RAM3
+5: 000011|010011|000  RAM3 to display1
+6: 000000|000000|111  shutdown
+
+
+-Example 3: Comparison program (jumping example):
+
+0: 010011|000001|000  in1 to RAM1
+1: 010100|000010|000  in2 to RAM2
+2: 000001|010001|000  RAM1 to RegA
+3: 000010|010010|000  RAM2 to RegB
+4: 000111|000101|110  go to ROM#5 if B<=A is true, and if it's false go to ROM#7.
+5: 000001|010011|000  RAM1 to display1
+6: 000000|000000|111  shutdown
+7: 000010|010011|000  RAM2 to display1
+8: 000000|000000|111  shutdown
+
+
+-Example 4: Fibonacci Sequence (combines concepts used in the previous programs and uses jumping/looping):
+
+0:  011110|001111|000  C1 to RAM15
+1:  011111|001110|000  C2 to RAM14
+2:  001111|010001|000  RAM15 to RegA
+3:  010000|010010|000  RAM16 to RegB
+4:  011000|010000|000  A+B to RAM16
+5:  010000|010100|000  RAM16 to display2
+6:  010000|010010|000  RAM16 to RegB
+7:  001110|010001|000  RAM14 to RegA
+8:  001001|010000|010  A=B? If true go to ROM#16, if false go to ROM#9.
+9:  001111|010001|000  RAM15 to RegA
+10: 010000|010010|000  RAM16 to RegB
+11: 011000|001111|000  A+B to RAM15
+12: 001111|010100|000  RAM15 to display2
+13: 001111|010001|000  RAM15 to RegA
+14: 001110|010010|000  RAM14 to RegB
+15: 000011|010000|010  A=B? If true go to ROM#16, if false go to ROM#3.
+16: 000000|000000|111  shutdown
+
+This is the current program loaded on the computer, in order to operate constant1 needs to equal 1 and constant2 needs to equal 233. After this program runs all display registers, ALU registers, RAM15, and RAM16 need to be manually cleared using the buttons that can be found on their write controls. Note that it is possible to change line 16 and add a few extra lines of code that do this automatically before shutting down. Line 13 and some other line could also be removed but I haven't done it cuz I'm lazy.
+
+
+
+__________________________
+Writing your own programs:
+__________________________
+
+When writing a program it's best to write it out in what is called psuedocode first. The psuedocode for all the examples is the annotation in the example programs. It may also be useful to write out what is in all relevant memory addresses at each step of the program, this will help organize what's going on in your program.
+
+The first time you try to program something it may not work and bug testing is crucial. Fortunately I set the clock to run fairly slow which makes bug testing easy, as you can just watch the machine run through its cycles.
+
+Happy coding!
